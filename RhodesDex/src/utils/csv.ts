@@ -1,9 +1,8 @@
 import Papa from 'papaparse'
 import type { ParseResult } from 'papaparse'
-import type { Event } from '../types/ranking'
+import type { EventData, EliteData } from '../types/ranking'
 
-export async function loadEventCsv(url: string): Promise<Event[]> 
-{
+export async function loadCsv<T extends EventData | EliteData>(url: string): Promise<T[]> {
   const response = await fetch(url)
 
   if (!response.ok) {
@@ -12,12 +11,11 @@ export async function loadEventCsv(url: string): Promise<Event[]>
 
   const csvText = await response.text()
 
-  const result: ParseResult<Event> =
-    Papa.parse<Event>(csvText, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-    })
+  const result: ParseResult<T> = Papa.parse<T>(csvText, {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+  })
 
   if (result.errors.length > 0) {
     throw new Error(`CSV 解析失败：${result.errors[0].message}`)

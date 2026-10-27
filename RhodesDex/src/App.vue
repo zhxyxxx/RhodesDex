@@ -24,6 +24,8 @@ import RankingTable from './components/RankingTable.vue'
 }
 
 .main {
+  display: flex;
+  justify-content: center;
   padding: 2rem;
 }
 </style>
