@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import RankingTable from './components/RankingTable.vue'
+import EventRankingTable from './components/EventRankingTable.vue'
 </script>
 
 <template>
@@ -9,7 +9,7 @@ import RankingTable from './components/RankingTable.vue'
     </header>
 
     <main class="main">
-      <RankingTable />
+      <EventRankingTable />
     </main>
   </div>
 </template>

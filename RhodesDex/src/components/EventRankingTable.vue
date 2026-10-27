@@ -3,68 +3,74 @@ import { ref, onMounted } from 'vue'
 import { loadCsv } from '../utils/csv'
 import type { EventData } from '../types/ranking'
 
+// 表格数据与页面交互状态
 const rows = ref<EventData[]>([])
 const loading = ref(false)
 const error = ref('')
 const selectedType = ref<string | null>(null)
 
+// 可排序字段与当前排序方向
 type SortKey = 'charnum' | 'time'
 type SortDirection = 'asc' | 'desc'
-
 const currentSort = ref<{ key: SortKey; direction: SortDirection } | null>(null)
 
+// 按点击的列排序，再次点击时切换升降序
 function sortBy(key: SortKey) {
   const direction: SortDirection =
     currentSort.value?.key === key && currentSort.value.direction === 'desc'
       ? 'asc'
       : 'desc'
-
   currentSort.value = { key, direction }
 
   const sortedRows = [...rows.value].sort((left, right) => {
-    let comparison: number
-
-    comparison = Number(left[key]) - Number(right[key])
-
+    const comparison = Number(left[key]) - Number(right[key])
     return direction === 'asc' ? comparison : -comparison
   })
-
   rows.value = sortedRows
 }
 
+// 为当前排序列返回方向箭头
 function getSortIndicator(key: SortKey): string {
   if (currentSort.value?.key !== key) return ''
   return currentSort.value.direction === 'asc' ? ' ▲' : ' ▼'
 }
 
+// 活动类型对应的样式类与界面名称
 const eventTypeClasses: Record<string, string> = {
   main: 'type-main',
-  act_ss: 'type-side-story',
-  act_om: 'type-story-collection',
+  act_ss: 'type-sidestory',
+  act_om: 'type-omnibus',
 }
 
+// 返回活动类型对应的 CSS 类
 function getEventTypeClass(type: string): string {
   return eventTypeClasses[type] ?? ''
 }
+
+// 将 CSV 类型代码转换为界面显示名称
 const eventTypeLabels: Record<string, string> = {
   main: '主线',
   act_ss: 'SideStory',
   act_om: '故事集',
 }
 
+// 将主线活动名转换为 EP 编号格式
 function getEventName(event: EventData): string {
   if (event.type !== 'main') return event.sname
   return event.sname.replace(/^(\d+)_(.+)$/, 'EP$1 $2')
 }
 
+// 管理类别筛选按钮的选中状态
 function isTypeSelected(type: string): boolean {
   return selectedType.value === type
 }
 
+// 点击当前类别时清除筛选，点击其他类别时切换筛选
 function toggleType(type: string) {
   selectedType.value = selectedType.value === type ? null : type
 }
 
+// 隐藏空活动名，并应用当前类别筛选
 function isEventVisible(event: EventData): boolean {
   const hasName = Boolean(event.sname?.trim())
   const matchesType =
@@ -73,10 +79,12 @@ function isEventVisible(event: EventData): boolean {
   return hasName && matchesType
 }
 
+// 按当前可见行生成连续排名
 function getEventRank(index: number): number {
   return rows.value.slice(0, index + 1).filter(isEventVisible).length
 }
 
+// 将 YYYYMM 格式转换为 YYYY/MM
 function getEventTime(time: number): string {
   const formattedTime = String(time)
   return /^\d{6}$/.test(formattedTime)
@@ -84,6 +92,7 @@ function getEventTime(time: number): string {
     : formattedTime
 }
 
+// 加载活动CSV，并设置初始时间降序（异步加载）
 async function loadData() {
   loading.value = true
   error.value = ''
@@ -91,7 +100,7 @@ async function loadData() {
   try {
     rows.value = await loadCsv<EventData>('/event.csv')
     sortBy('time')
-    console.log(rows.value)
+    // console.log(rows.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : '加载数据失败'
   } finally {
@@ -99,6 +108,7 @@ async function loadData() {
   }
 }
 
+// 组件挂载后开始加载数据
 onMounted(loadData)
 </script>
 
@@ -106,6 +116,7 @@ onMounted(loadData)
   <section class="ranking-table">
     <h2>活动文本量</h2>
 
+    <!-- 类别筛选按钮 -->
     <div class="table-toolbar">
       <div class="filter-buttons" role="group" aria-label="按类别筛选">
         <button
@@ -122,6 +133,7 @@ onMounted(loadData)
       </div>
     </div>
 
+    <!-- 可横向滚动的排行表格 -->
     <div class="table-wrapper">
       <table>
         <colgroup>
@@ -129,7 +141,6 @@ onMounted(loadData)
           <col class="name-column" />
           <col class="count-column" />
           <col class="time-column" />
-          <col class="type-column" />
         </colgroup>
         <thead>
           <tr>
@@ -144,6 +155,7 @@ onMounted(loadData)
           </tr>
         </thead>
 
+        <!-- 只渲染当前可见的活动 -->
         <tbody>
           <template v-for="(event, index) in rows" :key="index">
             <tr v-if="isEventVisible(event)" :class="getEventTypeClass(event.type)">
@@ -160,6 +172,7 @@ onMounted(loadData)
 </template>
 
 <style scoped>
+/* 表格主体的最大宽度 */
 .ranking-table {
   width: min(100%, 960px);
 }
@@ -169,6 +182,7 @@ h2 {
   text-align: center;
 }
 
+/* 筛选按钮靠右排列 */
 .table-toolbar {
   display: flex;
   justify-content: flex-end;
@@ -182,6 +196,7 @@ h2 {
   gap: 8px;
 }
 
+/* 筛选按钮的基础外观 */
 .filter-button {
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -194,6 +209,7 @@ h2 {
   cursor: pointer;
 }
 
+/* 三种类别的行背景色与筛选按钮颜色 */
 tr.type-main td {
   background-color: #8fbc8f;
 }
@@ -202,19 +218,19 @@ tr.type-main td {
   background: #8fbc8f;
 }
 
-tr.type-side-story td {
+tr.type-sidestory td {
   background-color: #b0c4de;
 }
 
-.filter-button.type-side-story {
+.filter-button.type-sidestory {
   background: #b0c4de;
 }
 
-tr.type-story-collection td {
+tr.type-omnibus td {
   background-color: #c79999;
 }
 
-.filter-button.type-story-collection {
+.filter-button.type-omnibus {
   background: #c79999;
 }
 
@@ -229,15 +245,17 @@ tr.type-story-collection td {
 }
 
 .filter-button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #000;
   outline-offset: 2px;
 }
 
+/* 小屏幕下允许表格横向滚动 */
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
 
+/* 固定表格布局和整体最小宽度 */
 table {
   width: 100%;
   min-width: 720px;
@@ -245,6 +263,7 @@ table {
   border-collapse: collapse;
 }
 
+/* 单元格边框、留白与对齐 */
 th,
 td {
   border: 1px solid #fff;
@@ -277,10 +296,11 @@ th button:hover {
 }
 
 th button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #000;
   outline-offset: 4px;
 }
 
+/* 各列宽度比例 */
 .rank-column {
   width: 10%;
 }
