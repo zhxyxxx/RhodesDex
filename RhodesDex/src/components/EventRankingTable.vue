@@ -258,7 +258,8 @@ tr.type-omnibus td {
 /* 固定表格布局和整体最小宽度 */
 table {
   width: 100%;
-  min-width: 720px;
+  min-width: 360px;
+  font-size: clamp(0.8rem, 1.7vw, 1rem);
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -267,7 +268,7 @@ table {
 th,
 td {
   border: 1px solid #fff;
-  padding: 12px 20px;
+  padding: clamp(6px, 1.5vw, 12px) clamp(6px, 2vw, 20px);
   text-align: center;
 }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import EliteRankingTable from './components/EliteRankingTable.vue';
 import EventRankingTable from './components/EventRankingTable.vue'
 </script>
 
@@ -9,7 +10,8 @@ import EventRankingTable from './components/EventRankingTable.vue'
     </header>
 
     <main class="main">
-      <EventRankingTable />
+      <!-- <EventRankingTable /> -->
+      <EliteRankingTable />
     </main>
   </div>
 </template>
@@ -26,6 +28,6 @@ import EventRankingTable from './components/EventRankingTable.vue'
 .main {
   display: flex;
   justify-content: center;
-  padding: 2rem;
+  padding: clamp(0.75rem, 3vw, 2rem);
 }
 </style>
