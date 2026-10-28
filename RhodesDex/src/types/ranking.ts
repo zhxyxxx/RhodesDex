@@ -7,15 +7,24 @@ export interface EventData {
 }
 
 export interface EliteData {
-    char: string
-    star: number
-    item1: string
-    num1: number
-    item2: string
-    num2: number
-    item3: string
-    num3: number
-    item4:string
-    num4: number
-    time: string
+  char: string
+  star: number
+  item1: string
+  num1: number
+  item2: string
+  num2: number
+  item3: string
+  num3: number
+  item4:string
+  num4: number
+  time: string
+}
+
+export interface EliteRankData extends EliteData {
+  value: number
+}
+
+export interface ItemData {
+  name: string
+  apValue: number
 }

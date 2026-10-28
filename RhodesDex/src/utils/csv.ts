@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import type { ParseResult } from 'papaparse'
-import type { EventData, EliteData } from '../types/ranking'
+import type { EventData, EliteData, ItemData } from '../types/ranking'
 
 export async function loadCsv<T extends EventData | EliteData>(url: string): Promise<T[]> {
   const response = await fetch(url)
@@ -22,4 +22,28 @@ export async function loadCsv<T extends EventData | EliteData>(url: string): Pro
   }
 
   return result.data
+}
+
+// 获取 JSON 数组并解析为指定元素类型的列表
+export async function loadJson<T extends ItemData>(url: string): Promise<T[]> {
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new Error(`JSON 读取失败：HTTP ${response.status}`)
+  }
+
+  let jsonData: unknown
+
+  try {
+    jsonData = await response.json()
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    throw new Error(`JSON 解析失败：${message}`)
+  }
+
+  if (!Array.isArray(jsonData)) {
+    throw new Error('JSON 格式错误：预期顶层数据为数组')
+  }
+
+  return jsonData as T[]
 }

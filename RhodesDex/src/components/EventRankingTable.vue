@@ -237,6 +237,7 @@ tr.type-omnibus td {
 .filter-button.active {
   border-color: #fff;
   color: #fff;
+  font-weight: 600;
 }
 
 .filter-button:hover {
