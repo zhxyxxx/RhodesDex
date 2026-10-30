@@ -5,18 +5,25 @@
       <nav class="page-navigation" aria-label="排行榜页面">
         <RouterLink to="/event">剧情文本量</RouterLink>
         <RouterLink to="/elite">干员精二数据</RouterLink>
+        <RouterLink to="/about">关于</RouterLink>
       </nav>
     </header>
 
     <main class="main">
       <RouterView />
     </main>
+
+    <footer class="footer">
+      <small>RhodesDex · 明日方舟数据整理</small>
+    </footer>
   </div>
 </template>
 
 <style scoped>
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -54,8 +61,16 @@
 }
 
 .main {
+  flex: 1;
   display: flex;
   justify-content: center;
   padding: clamp(0.75rem, 3vw, 2rem);
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 2rem;
+  color: var(--text);
+  text-align: center;
 }
 </style>

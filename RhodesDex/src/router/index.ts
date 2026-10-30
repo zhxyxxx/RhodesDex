@@ -18,6 +18,11 @@ const router = createRouter({
       name: 'event-ranking',
       component: () => import('../components/EventRankingTable.vue'),
     },
+    {
+      path: '/about',
+      name: 'about',
+      component: () => import('../views/AboutView.vue'),
+    },
   ],
 })
 
