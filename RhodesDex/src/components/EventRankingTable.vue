@@ -187,6 +187,7 @@ h2 {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
+  margin-top: 36px;
 }
 
 .filter-buttons {

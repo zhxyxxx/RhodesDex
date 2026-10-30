@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, nextTick, ref, onMounted } from 'vue'
 import { loadCsv, loadJson } from '../utils/csv'
 import type { EliteData, EliteRankData, ItemData } from '../types/ranking'
 
@@ -8,6 +8,9 @@ const rows = ref<EliteRankData[]>([])
 const loading = ref(false)
 const error = ref('')
 const selectedStar = ref<number>(6)
+const searchQuery = ref('')
+const selectedCharacter = ref('')
+const showSuggestions = ref(false)
 
 // 当前排序方向
 type SortDirection = 'asc' | 'desc'
@@ -54,6 +57,50 @@ function toggleStar(star: number) {
 // 应用当前类别筛选
 function isStarVisible(character: EliteData): boolean {
   return selectedStar.value === character.star
+}
+
+// 输入时从干员名称中生成候补，不据此过滤表格行。
+const matchingCandidates = computed(() => {
+  const query = searchQuery.value.trim().toLocaleLowerCase()
+  if (!query) return []
+
+  return rows.value.filter((character) =>
+    character.char.toLocaleLowerCase().includes(query),
+  )
+})
+
+function handleSearchInput() {
+  selectedCharacter.value = ''
+  showSuggestions.value = true
+}
+
+function closeSuggestionsOnBlur(event: FocusEvent) {
+  const nextTarget = event.relatedTarget as HTMLElement | null
+  if (!nextTarget?.closest('.search-field')) {
+    showSuggestions.value = false
+  }
+}
+
+function getCharacterRowId(name: string): string {
+  return `operator-${encodeURIComponent(name)}`
+}
+
+async function selectCharacter(character: EliteRankData) {
+  searchQuery.value = character.char
+  selectedCharacter.value = character.char
+  selectedStar.value = character.star
+  showSuggestions.value = false
+
+  await nextTick()
+  document.getElementById(getCharacterRowId(character.char))?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center',
+  })
+}
+
+// `time` 为 new 的干员会在姓名旁显示标记，并高亮干员名单元格。
+function isNew(character: EliteData): boolean {
+  return character.time.trim().toLowerCase() === 'new'
 }
 
 // 按当前可见行生成连续排名
@@ -112,8 +159,43 @@ onMounted(loadData)
   <section class="ranking-table">
     <h2>干员精二等效理智</h2>
 
-    <!-- 类别筛选按钮 -->
+    <!-- 搜索框与类别筛选按钮 -->
     <div class="table-toolbar">
+      <div class="search-field">
+        <span>搜索干员</span>
+        <div class="search-input-wrap">
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="输入干员名称"
+            aria-label="按干员名称搜索"
+            role="combobox"
+            :aria-expanded="showSuggestions && matchingCandidates.length > 0"
+            aria-controls="operator-suggestions"
+            @input="handleSearchInput"
+            @focus="showSuggestions = true"
+            @blur="closeSuggestionsOnBlur"
+          />
+          <ul
+            v-if="showSuggestions && searchQuery.trim() && matchingCandidates.length"
+            id="operator-suggestions"
+            class="search-suggestions"
+            role="listbox"
+            aria-label="匹配的干员"
+          >
+            <li v-for="candidate in matchingCandidates" :key="candidate.char">
+              <button
+                type="button"
+                role="option"
+                @mousedown.prevent
+                @click="selectCharacter(candidate)"
+              >
+                {{ candidate.char }}
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div class="filter-buttons" role="group" aria-label="按类别筛选">
         <button
           v-for="star in starList"
@@ -159,9 +241,19 @@ onMounted(loadData)
 
         <tbody>
           <template v-for="(character, index) in rows" :key="index">
-            <tr v-if="isStarVisible(character)" :class="getStarClass(character.star)">
+            <tr
+              v-if="isStarVisible(character)"
+              :id="getCharacterRowId(character.char)"
+              :class="[
+                getStarClass(character.star),
+                { 'is-new': isNew(character), 'is-selected': selectedCharacter === character.char },
+              ]"
+            >
               <td>{{ getCharRank(index) }}</td>
-              <td>{{ character.char }}</td>
+              <td>
+                {{ character.char }}
+                <span v-if="isNew(character)" class="new-badge">NEW</span>
+              </td>
               <td>{{ character.item1 }}</td>
               <td>{{ character.num1 }}</td>
               <td>{{ character.item2 }}</td>
@@ -194,6 +286,9 @@ onMounted(loadData)
 
   --value-cell: #dcdcdc;
   --rank-cell: #dcdcdc;
+  --new-four-cell: #ee82ee;
+  --new-five-cell: #ffd700;
+  --new-six-cell: #ff8c00;
 }
 
 h2 {
@@ -204,8 +299,74 @@ h2 {
 /* 筛选按钮靠右排列 */
 .table-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 12px;
+  margin-top: 36px;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: 12px;
+  color: #000;
+}
+
+.search-input-wrap {
+  position: relative;
+}
+
+.search-field input {
+  width: min(60vw, 320px);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: inherit;
+  background: var(--bg);
+  font: inherit;
+}
+
+.search-field input:focus-visible {
+  outline: 2px solid #333;
+  outline-offset: 2px;
+}
+
+.search-suggestions {
+  position: absolute;
+  z-index: 2;
+  top: 100%;
+  right: 0;
+  left: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  background: var(--bg);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  list-style: none;
+}
+
+.search-suggestions button {
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 9px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-suggestions button:hover,
+.search-suggestions button:focus-visible {
+  background: #e5edf5;
+  outline: none;
 }
 
 .filter-buttons {
@@ -256,6 +417,11 @@ h2 {
   background: #ff8c00;
 }
 
+/* 选中候补后标出姓名格，不覆盖星级或 NEW 底色。 */
+tr.is-selected td:nth-child(2) {
+  box-shadow: inset 0 0 0 4px #156f66;
+}
+
 /* 小屏幕下允许表格横向滚动 */
 .table-wrapper {
   width: 100%;
@@ -283,6 +449,32 @@ td {
 td {
   color: #000;
   font-weight: 500;
+}
+
+/* new 干员只改变姓名格的填充色，并按星级区分。 */
+tr.type-four.is-new td:nth-child(2) {
+  background-color: var(--new-four-cell);
+}
+
+tr.type-five.is-new td:nth-child(2) {
+  background-color: var(--new-five-cell);
+}
+
+tr.type-six.is-new td:nth-child(2) {
+  background-color: var(--new-six-cell);
+}
+
+.new-badge {
+  display: inline-block;
+  margin-left: 0em;
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  color: #fff;
+  background-color: #d94a38;
+  font-size: 0.5em;
+  font-weight: 700;
+  line-height: 1.2;
+  vertical-align: 0.25em;
 }
 
 /* 排名列保持白色，干员列根据星级着色 */
@@ -365,11 +557,11 @@ th button:focus-visible {
 }
 
 .operator-column {
-  width: 16%;
+  width: 18%;
 }
 
 .material1-column {
-  width: 10%;
+  width: 9%;
 }
 
 .material2-column {
