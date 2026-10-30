@@ -1,7 +1,10 @@
 <template>
   <div class="app">
     <header class="header">
-      <h1>RhodesDex</h1>
+      <h1>
+        <img class="site-icon" src="/rhodes.png" alt="" />
+        <span>RhodesDex</span>
+      </h1>
       <nav class="page-navigation" aria-label="排行榜页面">
         <RouterLink to="/event">剧情文本量</RouterLink>
         <RouterLink to="/elite">干员精二数据</RouterLink>
@@ -28,6 +31,19 @@
 
 .header {
   padding: 2rem;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.site-icon {
+  width: 1em;
+  height: 1em;
+  object-fit: contain;
 }
 
 .page-navigation {
